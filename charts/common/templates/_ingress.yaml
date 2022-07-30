@@ -1,0 +1,55 @@
+{{- define "ejlevin1.ingresses" -}}
+{{ $root := $ }}
+{{- range .Values.ingresses }}
+  {{- include "ejlevin1.ingress" (dict "Root" $root "Values" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.ingress" -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.name | default (print .Root.Release.Name "-svc-ingress") }}
+  {{- if .Values.labels }}
+  labels:
+    {{- toYaml .Values.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.annotations }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if (.Values.tls).enabled }}
+  tls:
+    {{- range .Values.hosts }}
+      {{- if (.tls).enabled | default true }}
+    - hosts:
+        - {{ .host | quote }}
+      secretName: {{ required "The ingress must define either a Ingress level secret or a hostname level secret." ((.tls).secretName | default $.Values.tls.secretName) }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.tls.hosts }}
+    - hosts:
+        {{- range .Values.tls.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.tls.secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType | default "ImplementationSpecific" }}
+            backend:
+              service:
+                name: {{ .serviceName | default $.Root.Release.Name | quote }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+    {{- end }}
+---
+{{- end }}

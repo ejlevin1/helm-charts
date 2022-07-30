@@ -1,0 +1,48 @@
+{{- define "ejlevin1.external-services" -}}
+{{ $root := $ }}
+{{- range .Values.externalServices }}
+  {{- if .host }}
+    {{- include "ejlevin1.external-named-service" (dict "Root" $root "externalServiceRoot" .) | nindent 0 }}
+  {{- else }}
+    {{- include "ejlevin1.external-service" (dict "Root" $root "externalServiceRoot" .) | nindent 0 }}
+    {{- include "ejlevin1.external-endpoint" (dict "Root" $root "externalServiceRoot" .) | nindent 0 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.external-named-service" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ required ".external-service.name is a required" .externalServiceRoot.name }}
+spec:
+  type: ExternalName
+  externalName: {{ required ".external-service.host is a required" .externalServiceRoot.host }}
+---
+{{- end }}
+
+{{- define "ejlevin1.external-service" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ required ".external-service.name is a required" .externalServiceRoot.name }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ required ".external-service.port is a required" .externalServiceRoot.port }}
+    targetPort: {{ required ".external-service.targetPort is a required" .externalServiceRoot.targetPort }}
+---
+{{- end }}
+
+{{- define "ejlevin1.external-endpoint" }}
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ required ".external-service.name is a required" .externalServiceRoot.name }}
+subsets:
+- addresses:
+    - ip: {{ required ".external-service.ip is a required" .externalServiceRoot.ip }}
+  ports:
+    - port: {{ required ".external-service.port is a required" .externalServiceRoot.targetPort }}
+---
+{{- end }}

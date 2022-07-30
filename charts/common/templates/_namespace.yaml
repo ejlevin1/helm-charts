@@ -1,0 +1,22 @@
+{{- define "ejlevin1.namespaces" -}}
+{{ $root := $ }}
+{{- range .Values.namespaces }}
+  {{- include "ejlevin1.namespace" (dict "Root" $root "namespaceRoot" .) | nindent 0 }}
+---
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.namespace" }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ required "A namespace.name is required" .namespaceRoot.name | quote }}
+  {{- with .namespaceRoot.annotations }}
+  annotations: 
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .namespaceRoot.labels }}
+  annotations: 
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
