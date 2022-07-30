@@ -20,4 +20,4 @@ To uninstall the chart:
     helm delete my-<chart-name>
 
 #### Chart names and versions
-See [index.yml](./index.yml)
+See [index.yaml](./index.yaml)
