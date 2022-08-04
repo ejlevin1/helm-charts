@@ -1,0 +1,110 @@
+{{- define "ejlevin1.deployment" -}}
+{{- if (.Values.image).repository }}
+{{- if .Capabilities.APIVersions.Has "apps/v1" }}
+apiVersion: apps/v1
+{{- else }}
+apiVersion: apps/v1beta2
+{{- end }}
+kind: Deployment
+metadata:
+  name: {{ include "helm.name" . }}
+  labels: {{- include "helm.labels" . | nindent 4 }}
+  {{- if (.Values.deployment).annotations }}
+  annotations:
+    {{- toYaml .Values.deployment.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.replicaCount (not (.Values.autoscaling).enabled) }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 5 }}
+  {{- if .Values.deploymentStrategy }}
+    strategy: {{- toYaml .Values.deploymentStrategy | nindent 6 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "helm.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "common.images.renderPullSecrets" ( dict "images" (list .Values.image) "context" $ ) | indent 6 }}
+      {{- if (.Values.image).imagePullSecrets }}
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if (.Values.serviceAccount).name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- else }}
+      securityContext: {}
+      {{- end }}
+      containers:
+        - name: {{ include "helm.name" . }}
+          {{- include "ejlevin1.containerBase" .Values | indent 10 }}
+          {{- include "ejlevin1.containerLifecycle" .Values | indent 10 }}
+          {{- include "ejlevin1.containerProbes" .Values | indent 10 }}
+      {{- if (.Values.sidecar).enabled }}
+        - name: {{ .Values.sidecar.name }}
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.sidecar.image.pullPolicy }}
+          {{- if .Values.sidecar.port }}
+          ports:
+          {{- range .Values.sidecar.port }}
+            - name: {{ .name }}
+              containerPort: {{ .containerPort }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.sidecar.resources }}
+          resources:
+            {{- toYaml .Values.sidecar.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.sidecar.envVariables }}
+          env:
+          {{- toYaml .Values.sidecar.envVariables | nindent 12 }}
+          {{- end -}}
+          {{- if or .Values.sidecar.envVariablesFromSecrets .Values.sidecar.envVariablesFromConfigMaps }}
+          envFrom:
+          {{- range .Values.sidecar.envVariablesFromSecrets.secretNames }}
+            - secretRef:
+                name: {{ . | quote }}
+          {{- end -}}
+          {{- range .Values.sidecar.envVariablesFromConfigMaps.configmapNames }}
+            - configMapRef:
+                name: {{ . | quote }}
+          {{- end -}}
+          {{- end }}
+          {{- include "ejlevin1.containerVolumeMounts" .Values.sidecar | indent 10 }}
+      {{- end }}
+      {{- if .Values.initContainers }}
+      initContainers:
+        {{- range .Values.initContainers }}
+            {{- (print "- name: " .name) | trim | nindent 8 }}
+            {{- include "ejlevin1.containerBase" . | indent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- include "ejlevin1.pod.volumeMounts" .Values | indent 6 }}
+{{- end -}}
+{{- end -}}
