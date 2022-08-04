@@ -1,0 +1,60 @@
+{{- define "ejlevin1.clusterroles" -}}
+{{ $root := $ }}
+{{- range .Values.clusterRoles }}
+  {{- include "ejlevin1.clusterrole" (dict "Root" $root "Values" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.clusterrole" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ required "A .name is is required on ClusterRole." .Values.name }}
+  {{- include "ejlevin1.helm-labels" . | nindent 2 }}
+  {{- include "ejlevin1.annotations" . | indent 2 }}
+rules:
+    {{- with .Values.rules }}
+        {{- toYaml . | nindent 2 }}
+    {{- end }}
+---
+{{- if or .Values.serviceAccounts .Values.groups }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.name }}-binding
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.name }}
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  {{- include "ejlevin1.clusterrole-serviceaccount-binding" . | indent 2 }}
+  {{- include "ejlevin1.clusterrole-groups-binding" . | nindent 2 }}
+  {{- include "ejlevin1.clusterrole-users-binding" . | nindent 2 }}
+---
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.clusterrole-serviceaccount-binding" -}}
+{{- range .Values.serviceAccounts }}
+- kind: ServiceAccount
+  name: {{ required "A serviceAccount.name must be specified to bind to a role." .name }}
+  namespace: {{ required "A namespace on the serviceAccount is required" .namespace }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.clusterrole-groups-binding" -}}
+{{- range .Values.groups }}
+- kind: Group
+  name: {{ required "A group.name must be specified to bind to a role." .name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}
+
+
+{{- define "ejlevin1.clusterrole-users-binding" -}}
+{{- range .Values.users }}
+- kind: User
+  name: {{ required "A user.name must be specified to bind to a role." .name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}

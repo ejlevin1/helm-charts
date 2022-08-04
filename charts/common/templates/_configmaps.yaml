@@ -1,0 +1,40 @@
+{{- define "ejlevin1.config-maps" -}}
+{{ $root := $ }}
+{{- range .Values.configMaps }}
+  {{- include "ejlevin1.config-map" (dict "Root" $root "configMapRoot" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.config-map" }}
+{{ $Files := .Root.Files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ required ".configMap.name is a required" .configMapRoot.name }}
+  {{- include "ejlevin1.helm-labels" (dict "Root" .Root "Values" (dict "labels" .configMapRoot.labels))| nindent 2 }}
+  {{- include "ejlevin1.annotations" . | indent 2 }}
+data:
+{{- range .configMapRoot.files }}
+  {{- ($Files.Glob .).AsConfig | nindent 2 }}
+{{- end }}
+{{- range $key, $value := .configMapRoot.items }}
+  {{- if kindIs "string" $value }}
+    {{- $key | nindent 2 }}: |
+      {{- $value | quote | nindent 4 }}
+  {{- else if kindIs "map" $value }}
+    {{- if eq $value.format "files" }}
+      {{- ($Files.Glob $value.glob).AsConfig | nindent 2 }}
+    {{- else }}
+    {{- $key | nindent 2 }}: |
+      {{- if eq $value.format "raw" -}}
+        {{- tpl $value.template $ | nindent 4 }}
+      {{- else -}}
+        {{- tpl $value.template $ | fromJson | toJson | nindent 4 }}
+      {{- end -}}
+    {{- end }}
+  {{- else }}
+    {{- fail (list "Unknown configMap type [" (kindOf $value) "]" | join "") }}
+  {{- end }}
+{{- end }}
+---
+{{- end }}
