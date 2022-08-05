@@ -19,8 +19,7 @@ data:
 {{- end }}
 {{- range $key, $value := .configMapRoot.items }}
   {{- if kindIs "string" $value }}
-    {{- $key | nindent 2 }}: |
-      {{- $value | nindent 4 }}
+    {{- $key | nindent 2 }}: {{ $value }}
   {{- else if kindIs "map" $value }}
     {{- if eq $value.format "files" }}
       {{- ($Files.Glob $value.glob).AsConfig | nindent 2 }}
