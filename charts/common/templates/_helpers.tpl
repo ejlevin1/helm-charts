@@ -218,12 +218,10 @@ ports:
 {{- if .resources }}
 resources: {{- toYaml .resources | nindent 2 }}
 {{- end }}
+env:
 {{- if .envVariables }}
-env: 
   {{- include "helm.toNameValueList" .envVariables | indent 2 }}
 {{- end }}
-{{- if or .envVariablesFromSecrets .envVariablesFromConfigMaps }}
-envFrom:
 {{- if .envVariablesFromSecrets }}
 {{- range $key, $value := .envVariablesFromSecrets }}
   - name: {{ $key | quote }}
@@ -241,8 +239,8 @@ envFrom:
         name: {{ $value.name }}
         key: {{ $value.key }}
 {{- end -}}
-{{- end -}}
 {{- end }}
+
 {{- include "ejlevin1.containerVolumeMounts" . }}
 {{- end }}
 
