@@ -203,10 +203,10 @@ image: {{ include "common.images.image" ( dict "imageRoot" .image "global" . ) }
 imagePullPolicy: {{ .image.pullPolicy | default "Always" }}
 {{- if (.command).binaryName }}
 command: [{{ .command.binaryName | quote }}]
+{{- end }}
 args:
 {{- range .command.args }}
   - {{ . | quote }}
-{{- end }}
 {{- end }}
 {{- if (.service).port }}
 ports:
@@ -216,8 +216,7 @@ ports:
 {{- end }}
 {{- end }}
 {{- if .resources }}
-resources:
-  {{- toYaml .resources | nindent 12 }}
+resources: {{- toYaml .resources | nindent 2 }}
 {{- end }}
 {{- if .envVariables }}
 env: 
@@ -226,15 +225,21 @@ env:
 {{- if or .envVariablesFromSecrets .envVariablesFromConfigMaps }}
 envFrom:
 {{- if .envVariablesFromSecrets }}
-{{- range .envVariablesFromSecrets.secretNames }}
-  - secretRef:
-      name: {{ . | quote }}
+{{- range $key, $value := .envVariablesFromSecrets }}
+  - name: {{ $key | quote }}
+    valueFrom:
+      secretKeyRef:
+        name: {{ $value.name }}
+        key: {{ $value.key }}
 {{- end -}}
 {{- end -}}
 {{- if .envVariablesFromConfigMaps }}
-{{- range .envVariablesFromConfigMaps.configmapNames }}
-  - configMapRef:
-      name: {{ . | quote }}
+{{- range $key, $value := .envVariablesFromConfigMaps }}
+  - name: {{ $key | quote }}
+    valueFrom:
+      configMapKeyRef:
+        name: {{ $value.name }}
+        key: {{ $value.key }}
 {{- end -}}
 {{- end -}}
 {{- end }}
