@@ -1,4 +1,5 @@
 {{- define "ejlevin1.deployment" -}}
+{{ $root := $ }}
 {{- if (.Values.image).repository }}
 {{- if .Capabilities.APIVersions.Has "apps/v1" }}
 apiVersion: apps/v1
@@ -50,47 +51,21 @@ spec:
       securityContext: {}
       {{- end }}
       containers:
-        - name: {{ include "helm.name" . }}
-          {{- include "ejlevin1.containerBase" .Values | indent 10 }}
-          {{- include "ejlevin1.containerLifecycle" .Values | indent 10 }}
-          {{- include "ejlevin1.containerProbes" .Values | indent 10 }}
+          {{- (print "- name: " (include "helm.name" .)) | trim | nindent 8 -}}
+          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
+          {{- include "ejlevin1.containerLifecycle" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
+          {{- include "ejlevin1.containerProbes" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
+          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
       {{- if (.Values.sidecar).enabled }}
-        - name: {{ .Values.sidecar.name }}
-          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default "latest" }}"
-          imagePullPolicy: {{ .Values.sidecar.image.pullPolicy }}
-          {{- if .Values.sidecar.port }}
-          ports:
-          {{- range .Values.sidecar.port }}
-            - name: {{ .name }}
-              containerPort: {{ .containerPort }}
-          {{- end }}
-          {{- end }}
-          {{- if .Values.sidecar.resources }}
-          resources:
-            {{- toYaml .Values.sidecar.resources | nindent 12 }}
-          {{- end }}
-          {{- if .Values.sidecar.envVariables }}
-          env:
-          {{- toYaml .Values.sidecar.envVariables | nindent 12 }}
-          {{- end -}}
-          {{- if or .Values.sidecar.envVariablesFromSecrets .Values.sidecar.envVariablesFromConfigMaps }}
-          envFrom:
-          {{- range .Values.sidecar.envVariablesFromSecrets.secretNames }}
-            - secretRef:
-                name: {{ . | quote }}
-          {{- end -}}
-          {{- range .Values.sidecar.envVariablesFromConfigMaps.configmapNames }}
-            - configMapRef:
-                name: {{ . | quote }}
-          {{- end -}}
-          {{- end }}
-          {{- include "ejlevin1.containerVolumeMounts" .Values.sidecar | indent 10 }}
+          {{- (print "- name: " (required "A sidecar container name is required." .Values.sidecar.name)) | trim | nindent 8 }}
+          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .Values.sidecar "Root" $root ) | nindent 10 }}
+          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .Values.sidecar "Root" $root ) | nindent 10 }}
       {{- end }}
       {{- if .Values.initContainers }}
       initContainers:
         {{- range .Values.initContainers }}
-            {{- (print "- name: " .name) | trim | nindent 8 }}
-            {{- include "ejlevin1.containerBase" . | indent 10 }}
+            {{- (print "- name: " (required "An init container name is required." .name)) | trim | nindent 8 }}
+            {{- include "ejlevin1.containerBase" ( dict "containerRoot" . "Root" $root ) | nindent 10 }}
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
@@ -105,6 +80,6 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- include "ejlevin1.pod.volumeMounts" .Values | indent 6 }}
+      {{- include "ejlevin1.pod.volumeMounts" ( dict "containerRoot" .Values "Root" $root ) | indent 6 }}
 {{- end -}}
 {{- end -}}

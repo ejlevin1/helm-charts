@@ -195,105 +195,112 @@ successThreshold: {{ .successThreshold }}
 {{- end }}
 
 {{- define "ejlevin1.containerBase" }}
-{{- if .securityContext }}
+{{ $root := $ }}
+{{- if .containerRoot.securityContext }}
 securityContext:
-  {{- toYaml .securityContext | nindent 2 }}
+  {{- toYaml .containerRoot.securityContext | nindent 2 }}
 {{- end }}
-image: {{ include "common.images.image" ( dict "imageRoot" .image "global" . ) }}
-imagePullPolicy: {{ .image.pullPolicy | default "Always" }}
-{{- if (.command).binaryName }}
-command: [{{ .command.binaryName | quote }}]
-{{- end }}
-args:
-{{- range .command.args }}
-  - {{ . | quote }}
-{{- end }}
-{{- if (.service).port }}
+image: {{ include "common.images.image" ( dict "imageRoot" .containerRoot.image "global" . ) }}
+imagePullPolicy: {{ .containerRoot.image.pullPolicy | default "Always" }}
+{{- include "ejlevin1.containerCommand" ( dict "Root" $root "commandRoot" .containerRoot.command ) }}
+{{- if ((.containerRoot).service).port }}
 ports:
 {{- range .service.port }}
   - name: {{ .name }}
     containerPort: {{ .containerPort }}
 {{- end }}
 {{- end }}
-{{- if .resources }}
-resources: {{- toYaml .resources | nindent 2 }}
+{{- if .containerRoot.resources }}
+resources: {{- toYaml .containerRoot.resources | nindent 2 }}
 {{- end }}
 env:
-{{- if .envVariables }}
-  {{- include "helm.toNameValueList" .envVariables | indent 2 }}
+{{- if .containerRoot.envVariables }}
+  {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
 {{- end }}
-{{- if .envVariablesFromSecrets }}
-{{- range $key, $value := .envVariablesFromSecrets }}
-  - name: {{ $key | quote }}
+{{- if .containerRoot.envVariablesFromSecrets }}
+{{- range $key, $value := .containerRoot.envVariablesFromSecrets }}
+  - name: {{ $key | trim }}
     valueFrom:
       secretKeyRef:
-        name: {{ $value.name }}
-        key: {{ $value.key }}
+        name: {{ $value.name | trim }}
+        key: {{ $value.key | trim }}
 {{- end -}}
 {{- end -}}
-{{- if .envVariablesFromConfigMaps }}
-{{- range $key, $value := .envVariablesFromConfigMaps }}
-  - name: {{ $key | quote }}
+{{- if .containerRoot.envVariablesFromConfigMaps }}
+{{- range $key, $value := .containerRoot.envVariablesFromConfigMaps }}
+  - name: {{ $key | trim }}
     valueFrom:
       configMapKeyRef:
-        name: {{ $value.name }}
-        key: {{ $value.key }}
+        name: {{ $value.name | trim }}
+        key: {{ $value.key | trim }}
 {{- end -}}
 {{- end }}
 
 {{- include "ejlevin1.containerVolumeMounts" . }}
 {{- end }}
 
+
+{{- define "ejlevin1.containerCommand" }}
+{{- if .commandRoot }}
+{{- if .commandRoot.binaryName }}
+command: [{{ .commandRoot.binaryName | trim | quote }}]
+{{- end }}
+{{- if .commandRoot.args }}
+args:
+  {{- range .commandRoot.args }}
+    {{- print "- " . | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "ejlevin1.containerProbes" }}
-{{- if (.startupProbe).enabled }}
-startupProbe:
-  {{- include "helm.toProbe" .startupProbe | indent 2 }}
+{{- if ((.containerRoot).startupProbe).enabled }}
+startupProbe: {{- include "helm.toProbe" .containerRoot.startupProbe | nindent 2 }}
 {{- end }}
-{{- if (.livenessProbe).enabled }}
-livenessProbe:
-  {{- include "helm.toProbe" .livenessProbe | indent 2 }}
+{{- if ((.containerRoot).livenessProbe).enabled }}
+livenessProbe: {{- include "helm.toProbe" .containerRoot.livenessProbe | nindent 2 }}
 {{- end }}
-{{- if (.readinessProbe).enabled }}
-readinessProbe:
-  {{- include "helm.toProbe" .readinessProbe | indent 2 }}
+{{- if ((.containerRoot).readinessProbe).enabled }}
+readinessProbe: {{- include "helm.toProbe" .containerRoot.readinessProbe | nindent 2 }}
 {{- end }}
 {{- end }}
 
 {{- define "ejlevin1.containerLifecycle" }}
-{{- if .commandsAfterPodStart }}
+{{- if .containerRoot.commandsAfterPodStart }}
 lifecycle:
   postStart:
     exec:
       command:
-      {{-  range .commandsAfterPodStart.args }}
+      {{-  range .containerRoot.commandsAfterPodStart.args }}
       - {{ . | quote }}
       {{- end }}
 {{- end }}
 {{- end }}
 
 {{- define "ejlevin1.containerVolumeMounts" }}
-{{- if or .secretVolumes .persistentVolumes .emptyDirVolumes .configMapVolumes }}
+{{- if or .containerRoot.secretVolumes .containerRoot.persistentVolumes .containerRoot.emptyDirVolumes .containerRoot.configMapVolumes }}
 volumeMounts:
-{{- if .secretVolumes }}
-  {{- include "helm.toVolumeMount" .secretVolumes | indent 2 }}
+{{- if .containerRoot.secretVolumes }}
+  {{- include "helm.toVolumeMount" .containerRoot.secretVolumes | nindent 2 }}
 {{- end }}
-{{- if .persistentVolumes }}
-  {{- include "helm.toVolumeMount" .persistentVolumes | indent 2 }}
+{{- if .containerRoot.persistentVolumes }}
+  {{- include "helm.toVolumeMount" .containerRoot.persistentVolumes | nindent 2 }}
 {{- end }}
-{{- if .emptyDirVolumes }}
-  {{- include "helm.toVolumeMount" .emptyDirVolumes | indent 2 }}
+{{- if .containerRoot.emptyDirVolumes }}
+  {{- include "helm.toVolumeMount" .containerRoot.emptyDirVolumes | nindent 2 }}
 {{- end }}
-{{- if .configMapVolumes }}
-  {{- include "helm.toVolumeMount" .configMapVolumes | indent 2 }}
+{{- if .containerRoot.configMapVolumes }}
+  {{- include "helm.toVolumeMount" .containerRoot.configMapVolumes | nindent 2 }}
 {{- end }}
 {{- end }}
 {{- end }}
 
 {{- define "ejlevin1.pod.volumeMounts" }}
-{{- if or .secretVolumes .persistentVolumes .emptyDirVolumes .configMapVolumes (.sidecar).configMapVolumes (.sidecar).secretVolumes }}
+{{- if or .containerRoot.secretVolumes .containerRoot.persistentVolumes .containerRoot.emptyDirVolumes .containerRoot.configMapVolumes ((.containerRoot).sidecar).configMapVolumes ((.containerRoot).sidecar).secretVolumes }}
 volumes:
-{{- if .secretVolumes }}
-{{- range .secretVolumes }}
+{{- if .containerRoot.secretVolumes }}
+{{- range .containerRoot.secretVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   secret:
@@ -304,8 +311,8 @@ volumes:
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if .persistentVolumes }}
-{{- range .persistentVolumes }}
+{{- if .containerRoot.persistentVolumes }}
+{{- range .containerRoot.persistentVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   persistentVolumeClaim:
@@ -313,16 +320,16 @@ volumes:
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if .emptyDirVolumes }}
-{{- range .emptyDirVolumes }}
+{{- if .containerRoot.emptyDirVolumes }}
+{{- range .containerRoot.emptyDirVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   emptyDir: {}
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if .configMapVolumes }}
-{{- range .configMapVolumes }}
+{{- if .containerRoot.configMapVolumes }}
+{{- range .containerRoot.configMapVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   configMap:
@@ -333,8 +340,8 @@ volumes:
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if (.sidecar).configMapVolumes }}
-{{- range .sidecar.configMapVolumes }}
+{{- if ((.containerRoot).sidecar).configMapVolumes }}
+{{- range .containerRoot.sidecar.configMapVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   configMap:
@@ -345,8 +352,8 @@ volumes:
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if (.sidecar).secretVolumes }}
-{{- range .sidecar.secretVolumes }}
+{{- if ((.containerRoot).sidecar).secretVolumes }}
+{{- range .containerRoot.sidecar.secretVolumes }}
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   secret:
