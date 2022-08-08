@@ -1,0 +1,53 @@
+{{- define "ejlevin1.persistent-volume-claims" -}}
+{{ $root := $ }}
+  {{- range .Values.persistentVolumes }}
+    {{- include "ejlevin1.persistent-volume" (dict "Root" $root "pvRoot" .) }}
+  {{- end }}
+  {{- range .Values.persistentVolumeClaims }}
+    {{- include "ejlevin1.persistent-volume-claim" (dict "Root" $root "Values" .) }}
+  {{- end }}
+{{- end }}
+
+{{- define "ejlevin1.persistent-volume" -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ required "A pv name is required." .pvRoot.name }}
+  namespace: {{ .Root.Release.Namespace }}
+  {{- with .pvRoot.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .pvRoot.accessMode | default "ReadWriteOnce" | quote }}
+  capacity:
+    storage: {{ required "A pv storage amount is required." .pvRoot.storage | quote }}
+  {{- if hasKey .pvRoot "reclaimPolicy" }}
+  reclaimPolicy:
+    - {{ .pvRoot.reclaimPolicy | quote }}
+  {{- end }}
+  {{- toYaml .pvRoot.additionalSpec | nindent 2 }}
+---
+{{- end }}
+
+{{- define "ejlevin1.persistent-volume-claim" -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ required "A pvc name is required." .Values.name }}
+  namespace: {{ .Root.Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.accessMode | default "ReadWriteOnce" | quote }}
+  {{- if hasKey .Values "selector" }}
+  selector:
+    {{- toYaml .Values.selector | nindent 4 }}
+  {{- else }}
+  storageClassName: {{ .Values.storageClassName | default "local-path" }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ required "A pvc storage amount is required." .Values.storage | quote }}
+---
+{{- end }}

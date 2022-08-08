@@ -1,0 +1,29 @@
+{{- define "ejlevin1.persistent-volume-debugggers" -}}
+{{ $root := $ }}
+{{- range .Values.persistentVolumeClaims }}
+  {{- include "ejlevin1.persistent-volume-debuggger" (dict "Root" $root "Values" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.persistent-volume-debuggger" -}}
+{{- if .Values.debugger }}
+kind: Pod
+apiVersion: v1
+metadata:
+  name: {{ required "A pvc name is required." .Values.name }}-debugger
+  namespace: {{ .Root.Release.Namespace }}
+spec:
+  volumes:
+    - name: volume-to-debug
+      persistentVolumeClaim:
+       claimName: {{ .Values.name | quote }}
+  containers:
+    - name: debugger
+      image: busybox
+      command: ['sleep', '3600']
+      volumeMounts:
+        - mountPath: "/data"
+          name: volume-to-debug
+---
+{{- end }}
+{{- end }}
