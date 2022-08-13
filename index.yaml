@@ -100,4 +100,14 @@ entries:
     urls:
     - https://github.com/ejlevin1/helm-charts/releases/download/common-0.1.0/common-0.1.0.tgz
     version: 0.1.0
+  letsencrypt:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2022-08-13T03:03:44.362385828Z"
+    description: A Helm chart for letsencrypt on Kubernetes
+    digest: 96d18addf242b4fdcaf46c2316c0792925ef9bdf01c19f61c27f7f9874dd3112
+    name: letsencrypt
+    urls:
+    - https://github.com/ejlevin1/helm-charts/releases/download/letsencrypt-0.1.0/letsencrypt-0.1.0.tgz
+    version: 0.1.0
 generated: "2022-07-30T00:28:08.022766221Z"
