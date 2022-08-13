@@ -1,0 +1,33 @@
+{{- define "letsencrypt.certificates" -}}
+{{ $root := $ }}
+{{- range .Values.certificates }}
+  {{- include "letsencrypt.certificate" (dict "Root" $root "Values" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "letsencrypt.certificate" }}
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{ required ".certificate.name is a required" .Values.name }}
+spec:
+  secretName: {{ .Values.name }}
+  {{- if or .Values.labels .Values.annotations }}
+  secretTemplate:
+  {{- with .Values.annotations }}
+    annotations:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+  {{- with .Values.labels }}
+    labels:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+  {{- end }}
+  issuerRef: 
+    kind: ClusterIssuer
+    name: {{ required ".issuer is a required field." .Values.issuer | quote }}
+  commonName: {{ required ".domain is a required" .Values.domain | quote }}
+  dnsNames:
+    - {{ .Values.domain | quote }}
+---
+{{- end }}

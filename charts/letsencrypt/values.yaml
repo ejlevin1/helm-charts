@@ -1,0 +1,13 @@
+issuers: []
+# - type: staging
+#   name: letsencrypt-staging
+  ## Email address used for ACME registration
+  # email: "" 
+  
+# - type: prod
+  # email: ""
+
+certificates: []
+# - name: homeauto.alwayson.tech-tls
+#   domain: homeauto.alwayson.tech
+#   issuer: letsencrypt-staging

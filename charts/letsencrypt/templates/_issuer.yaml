@@ -1,0 +1,34 @@
+{{- define "letsencrypt.issuers" }}
+  {{- $Root := $ }}
+  {{- range .Values.issuers }}
+    {{- include "letsencrypt.issuer" (dict "Root" $Root "Values" . ) | nindent 0 }}
+    {{- print "---" | nindent 0 }}
+  {{- end }}
+{{- end }}
+
+{{- define "letsencrypt.issuer" }}
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+ name: {{ .Values.name | default (print .Root.Release.Name "-" .Values.type "-issuer" ) }}
+ namespace: {{ .Root.Release.Namespace }}
+spec:
+ acme:
+  # The ACME server URL
+  {{- if eq .Values.type "staging" }}
+  server: https://acme-staging-v02.api.letsencrypt.org/directory
+  {{- else }}
+  server: https://acme-v02.api.letsencrypt.org/directory
+  {{- end }}
+  {{- if .Values.email }}
+  email: {{ .Values.email }}
+  {{- end }}
+  # Name of a secret used to store the ACME account private key
+  privateKeySecretRef:
+    name: {{ .Values.privateKeyRef | default (print .Root.Release.Name "-" .Values.type) }}
+  # Enable the HTTP-01 challenge provider
+  solvers:
+  - http01:
+      ingress:
+        class:  nginx
+{{- end }}
