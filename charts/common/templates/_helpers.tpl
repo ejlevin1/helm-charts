@@ -205,7 +205,7 @@ imagePullPolicy: {{ .containerRoot.image.pullPolicy | default "Always" }}
 {{- include "ejlevin1.containerCommand" ( dict "Root" $root "commandRoot" .containerRoot.command ) }}
 {{- if ((.containerRoot).service).port }}
 ports:
-{{- range .service.port }}
+{{- range .containerRoot.service.port }}
   - name: {{ .name }}
     containerPort: {{ .containerPort }}
 {{- end }}
