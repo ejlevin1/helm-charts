@@ -1,0 +1,32 @@
+{{- define "ejlevin1.services" -}}
+{{ $root := $ }}
+{{- range .Values.services }}
+  {{- include "ejlevin1.service" (dict "root" $root "serviceRoot" .) }}
+{{- end }}
+{{- end }}
+
+{{- define "ejlevin1.service" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ required ".name is required on service object" .serviceRoot.name }}
+  namespace: {{ .root.Release.Namespace }}
+  {{- include "ejlevin1.generic.labels" (dict "root" .root "Values" .serviceRoot) | nindent 2 }}
+  {{- include "ejlevin1.generic.annotations" (dict "root" .root "Values" .serviceRoot) | nindent 2 }}
+spec:
+  type: {{ default "ClusterIP" .serviceRoot.type }}
+  ports:
+  {{- range .serviceRoot.ports }}
+    - port: {{ .servicePort }}
+      targetPort: {{ .containerPort }}
+      protocol: {{ default "TCP" .protocol }}
+      name: {{ required ".name is required on all service ports" .name }}
+  {{- end }}
+  selector:
+  {{- if hasKey .serviceRoot "selector" }}
+    {{- toYaml .serviceRoot.selector | nindent 4 }}
+  {{- else }}
+    {{- include "helm.selectorLabels" (dict "Chart" .root.Chart "Release" .root.Release "Values" .serviceRoot) | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
