@@ -6,7 +6,7 @@
 {{- end }}
 
 {{- define "letsencrypt.certificate" }}
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: {{ default "cert-manager.io/v1alpha2" .Values.apiVersion }}
 kind: Certificate
 metadata:
   name: {{ required ".certificate.name is a required" .Values.name }}
