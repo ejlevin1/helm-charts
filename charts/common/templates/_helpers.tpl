@@ -235,8 +235,6 @@ env:
         key: {{ $value.key | trim }}
 {{- end -}}
 {{- end }}
-
-{{- include "ejlevin1.containerVolumeMounts" . }}
 {{- end }}
 
 
