@@ -1,10 +1,18 @@
 {{- define "ejlevin1.persistent-volume-claims" -}}
 {{ $root := $ }}
   {{- range .Values.persistentVolumes }}
+    {{- if .existingClaimName }}
+    {{- print "# Not pv as it has an existing volume claim." }}
+    {{- else }}
     {{- include "ejlevin1.persistent-volume" (dict "Root" $root "pvRoot" .) }}
+    {{- end }}
   {{- end }}
   {{- range .Values.persistentVolumeClaims }}
+    {{- if .existingClaimName }}
+    {{- print "# Not creating pvc as it has an existing volume claim." }}
+    {{- else }}
     {{- include "ejlevin1.persistent-volume-claim" (dict "Root" $root "Values" .) }}
+    {{- end }}
   {{- end }}
 {{- end }}
 

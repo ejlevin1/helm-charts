@@ -314,7 +314,13 @@ volumes:
 {{- if not .morethanonce }}
 - name: {{ .name | quote }}
   persistentVolumeClaim:
+    {{- if .claimName }}
     claimName: {{ .claimName | quote }}
+    {{- else if .existingClaimName }}
+    claimName: {{ .existingClaimName | quote }}
+    {{- else }}
+    {{- fail "Must set either a claimName or existingClaimName on a persistentVolume" }}
+    {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
