@@ -157,6 +157,15 @@ entries:
   letsencrypt:
   - apiVersion: v1
     appVersion: "1.0"
+    created: "2023-05-03T04:19:42.25044825Z"
+    description: A Helm chart for letsencrypt on Kubernetes
+    digest: b2e5e5ec6809c70c7367ffa5f0bde27996428152b4f178875e85f1c05b06e2b7
+    name: letsencrypt
+    urls:
+    - https://github.com/ejlevin1/helm-charts/releases/download/letsencrypt-0.1.3/letsencrypt-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v1
+    appVersion: "1.0"
     created: "2023-05-03T04:14:01.926946258Z"
     description: A Helm chart for letsencrypt on Kubernetes
     digest: a20deace4ecd37d54ce28cd941f03a99439e7e8912a557354bff5dbd5fddc65b
