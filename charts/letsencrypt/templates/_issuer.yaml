@@ -7,7 +7,7 @@
 {{- end }}
 
 {{- define "letsencrypt.issuer" }}
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: {{ default "cert-manager.io/v1alpha2" .Values.apiVersion }}
 kind: ClusterIssuer
 metadata:
  name: {{ .Values.name | default (print .Root.Release.Name "-" .Values.type "-issuer" ) }}
