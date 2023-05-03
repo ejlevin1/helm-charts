@@ -27,8 +27,16 @@ spec:
   privateKeySecretRef:
     name: {{ .Values.privateKeyRef | default (print .Root.Release.Name "-" .Values.type) }}
   # Enable the HTTP-01 challenge provider
+  {{- if hasKey .Values "solvers" }}
+  solvers:
+  {{- range .Values.solvers }}
+    {{- print "-" | nindent 2 }}
+    {{- print (toYaml .) | nindent 4 }}
+  {{- end }}
+  {{- else }}
   solvers:
   - http01:
       ingress:
         class:  nginx
+  {{- end }}
 {{- end }}
