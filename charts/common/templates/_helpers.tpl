@@ -246,7 +246,7 @@ command: [{{ .commandRoot.binaryName | trim | quote }}]
 {{- if .commandRoot.args }}
 args:
   {{- range .commandRoot.args }}
-    {{- print "- " . | nindent 2 }}
+    {{- print "- " (print . | trim | quote) | nindent 2 }}
   {{- end }}
 {{- end }}
 {{- end }}
