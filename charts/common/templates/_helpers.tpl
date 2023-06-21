@@ -214,9 +214,6 @@ ports:
 resources: {{- toYaml .containerRoot.resources | nindent 2 }}
 {{- end }}
 env:
-{{- if .containerRoot.envVariables }}
-  {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
-{{- end }}
 {{- if .containerRoot.envVariablesFromFields }}
 {{- range $key, $value := .containerRoot.envVariablesFromFields }}
   - name: {{ $key | trim }}
@@ -243,6 +240,9 @@ env:
         name: {{ $value.name | trim }}
         key: {{ $value.key | trim }}
 {{- end -}}
+{{- end }}
+{{- if .containerRoot.envVariables }}
+  {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
 {{- end }}
 {{- end }}
 
