@@ -217,6 +217,15 @@ env:
 {{- if .containerRoot.envVariables }}
   {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
 {{- end }}
+{{- if .containerRoot.envVariablesFromFields }}
+{{- range $key, $value := .containerRoot.envVariablesFromFields }}
+  - name: {{ $key | trim }}
+    valueFrom:
+      fieldRef:
+        apiVersion: {{ default "v1" $value.version | trim }}
+        fieldPath: {{ $value.path | trim }}
+{{- end -}}
+{{- end -}}
 {{- if .containerRoot.envVariablesFromSecrets }}
 {{- range $key, $value := .containerRoot.envVariablesFromSecrets }}
   - name: {{ $key | trim }}
