@@ -228,8 +228,7 @@ env:
   - name: {{ $key | trim }}
     valueFrom:
       secretKeyRef:
-        name: {{ $value.name | trim }}
-        key: {{ $value.key | trim }}
+        {{- toYaml $value | nindent 8 }}
 {{- end -}}
 {{- end -}}
 {{- if .containerRoot.envVariablesFromConfigMaps }}
@@ -237,8 +236,7 @@ env:
   - name: {{ $key | trim }}
     valueFrom:
       configMapKeyRef:
-        name: {{ $value.name | trim }}
-        key: {{ $value.key | trim }}
+        {{- toYaml $value | nindent 8 }}
 {{- end -}}
 {{- end }}
 {{- if .containerRoot.envVariables }}
@@ -315,6 +313,16 @@ volumes:
     {{- if .defaultMode }}
     defaultMode: {{ .defaultMode }}
     {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .containerRoot.hostPathVolumes }}
+{{- range .containerRoot.hostPathVolumes }}
+{{- if not .morethanonce }}
+- name: {{ required ".name must be specified on hostPathVolumes" .name | quote }}
+  hostPath:
+    path: {{ required ".path must be specified on hostPathVolumes" .path | quote }}
+    type: {{ default "DirectoryOrCreate" .type | quote }}
 {{- end }}
 {{- end }}
 {{- end }}
