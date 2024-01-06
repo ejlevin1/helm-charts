@@ -16,7 +16,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with .namespaceRoot.labels }}
-  annotations: 
+  labels: 
     {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}
