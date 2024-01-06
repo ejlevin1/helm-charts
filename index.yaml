@@ -3,6 +3,15 @@ entries:
   common:
   - apiVersion: v1
     appVersion: "1.0"
+    created: "2024-01-06T19:31:23.383868628Z"
+    description: A Helm chart for common helm charts on Kubernetes
+    digest: ece3a3a5c01fb0bae7aa812d54091ea338f5a05897ce30a92a2de2cc99dcd377
+    name: common
+    urls:
+    - https://github.com/ejlevin1/helm-charts/releases/download/common-0.3.8/common-0.3.8.tgz
+    version: 0.3.8
+  - apiVersion: v1
+    appVersion: "1.0"
     created: "2024-01-03T23:20:23.654441384Z"
     description: A Helm chart for common helm charts on Kubernetes
     digest: 1ec82f1aa2e1292e16c1a68982f11f3327c37076515acbd0abdb2e169b606e48
