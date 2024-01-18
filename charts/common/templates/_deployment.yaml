@@ -66,6 +66,7 @@ spec:
         {{- range .Values.initContainers }}
             {{- (print "- name: " (required "An init container name is required." .name)) | trim | nindent 8 }}
             {{- include "ejlevin1.containerBase" ( dict "containerRoot" . "Root" $root ) | nindent 10 }}
+            {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" . "Root" $root ) | nindent 10 }}
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
