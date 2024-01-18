@@ -213,6 +213,7 @@ ports:
 {{- if .containerRoot.resources }}
 resources: {{- toYaml .containerRoot.resources | nindent 2 }}
 {{- end }}
+{{- if or .containerRoot.envVariablesFromFields .containerRoot.envVariablesFromSecrets .containerRoot.envVariablesFromConfigMaps .containerRoot.envVariables }}
 env:
 {{- if .containerRoot.envVariablesFromFields }}
 {{- range $key, $value := .containerRoot.envVariablesFromFields }}
@@ -241,6 +242,7 @@ env:
 {{- end }}
 {{- if .containerRoot.envVariables }}
   {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
+{{- end }}
 {{- end }}
 {{- end }}
 
