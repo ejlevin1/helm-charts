@@ -19,8 +19,8 @@ spec:
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 5 }}
-  {{- if .Values.deploymentStrategy }}
-    strategy: {{- toYaml .Values.deploymentStrategy | nindent 6 }}
+  {{- with .Values.deploymentStrategy }}
+  strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
