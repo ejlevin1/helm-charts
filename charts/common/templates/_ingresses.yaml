@@ -19,6 +19,9 @@ metadata:
     {{- toYaml .Values.annotations | nindent 4 }}
   {{- end }}
 spec:
+  {{- if hasKey .Values "ingressClassName" }}
+  ingressClassName: {{ .Values.ingressClassName | quote }}
+  {{- end }}
   {{- if (.Values.tls).enabled }}
   tls:
     {{- range .Values.hosts }}
