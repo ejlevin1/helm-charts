@@ -70,12 +70,12 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{- define "ejlevin1.failAndPrintKeys" -}}
+{{- define "common.failAndPrintKeys" -}}
 {{- fail (print "Keys [" (keys .) "]") }}
 {{- end }}
 
-{{- define "ejlevin1.failAndPrintValue" -}}
-{{- fail (print "Value [" . "]") }}
+{{- define "common.failAndPrintValue" -}}
+  {{- fail (print "failAndPrintValue [\n" . "\n]") }}
 {{- end }}
 
 {{- define "ejlevin1.labels" -}}
@@ -182,20 +182,20 @@ successThreshold: {{ .successThreshold }}
 {{- end }}
 
 {{- define "helm.toVolumeMount" }}
-{{- range . }}
+{{- range . -}}
 - name: {{ required ".name is required to define a volume mount." .name | quote }}
   mountPath: {{ required ".mountPath is required to define a volume mount." .mountPath | quote }}
-  {{- if .subPath }}
-  subPath: {{ .subPath }}
-  {{- end }}
-  {{- if .readOnly }}
+  {{- if .subPath -}}
+  subPath: {{ .subPath | quote }}
+  {{- end -}}
+  {{- if .readOnly -}}
   readOnly: {{ .readOnly | default true }}
-  {{- end }}
-{{- end }}
+  {{- end -}}
+{{- end -}}
 {{- end }}
 
 {{- define "ejlevin1.containerBase" }}
-{{ $root := $ }}
+{{- $root := $ }}
 {{- if .containerRoot.securityContext }}
 securityContext:
   {{- toYaml .containerRoot.securityContext | nindent 2 }}
@@ -206,46 +206,49 @@ imagePullPolicy: {{ .containerRoot.image.pullPolicy | default "Always" }}
 {{- if ((.containerRoot).service).port }}
 ports:
 {{- range .containerRoot.service.port }}
-  - name: {{ .name }}
+  - name: {{ .name | trim }}
     containerPort: {{ .containerPort }}
 {{- end }}
 {{- end }}
-{{- if .containerRoot.resources }}
-resources: {{- toYaml .containerRoot.resources | nindent 2 }}
-{{- end }}
+{{- if .containerRoot.resources -}}
+resources: {{- toYaml .containerRoot.resources | nindent 2 -}}
+{{- end -}}
+{{- include "common.containerEnv" . | trim | nindent 0 -}}
+{{- end -}}
+
+{{- define "common.containerEnv" }}
 {{- if or .containerRoot.envVariablesFromFields .containerRoot.envVariablesFromSecrets .containerRoot.envVariablesFromConfigMaps .containerRoot.envVariables }}
 env:
-{{- if .containerRoot.envVariablesFromFields }}
-{{- range $key, $value := .containerRoot.envVariablesFromFields }}
-  - name: {{ $key | trim }}
+{{- if .containerRoot.envVariablesFromFields -}}
+{{- range $key, $value := .containerRoot.envVariablesFromFields -}}
+  {{ print "- name: " ($key | trim) | nindent 2 }}
     valueFrom:
       fieldRef:
         apiVersion: {{ default "v1" $value.version | trim }}
         fieldPath: {{ $value.path | trim }}
 {{- end -}}
 {{- end -}}
-{{- if .containerRoot.envVariablesFromSecrets }}
-{{- range $key, $value := .containerRoot.envVariablesFromSecrets }}
-  - name: {{ $key | trim }}
+{{- if .containerRoot.envVariablesFromSecrets -}}
+{{- range $key, $value := .containerRoot.envVariablesFromSecrets -}}
+  {{ print "- name: " ($key | trim) | nindent 2 }}
     valueFrom:
       secretKeyRef:
         {{- toYaml $value | nindent 8 }}
 {{- end -}}
 {{- end -}}
-{{- if .containerRoot.envVariablesFromConfigMaps }}
-{{- range $key, $value := .containerRoot.envVariablesFromConfigMaps }}
-  - name: {{ $key | trim }}
+{{- if .containerRoot.envVariablesFromConfigMaps -}}
+{{- range $key, $value := .containerRoot.envVariablesFromConfigMaps -}}
+  {{ print "- name: " ($key | trim) | nindent 2 }}
     valueFrom:
       configMapKeyRef:
         {{- toYaml $value | nindent 8 }}
 {{- end -}}
-{{- end }}
-{{- if .containerRoot.envVariables }}
-  {{- include "helm.toNameValueList" .containerRoot.envVariables | indent 2 }}
-{{- end }}
-{{- end }}
-{{- end }}
-
+{{- end -}}
+{{- if .containerRoot.envVariables -}}
+  {{- include "helm.toNameValueList" .containerRoot.envVariables | trim | nindent 2 -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{- define "ejlevin1.containerCommand" }}
 {{- if .commandRoot }}
@@ -286,21 +289,21 @@ lifecycle:
 {{- end }}
 
 {{- define "ejlevin1.containerVolumeMounts" }}
-{{- if or .containerRoot.secretVolumes .containerRoot.persistentVolumes .containerRoot.emptyDirVolumes .containerRoot.configMapVolumes }}
+{{- if or .containerRoot.secretVolumes .containerRoot.persistentVolumes .containerRoot.emptyDirVolumes .containerRoot.configMapVolumes -}}
 volumeMounts:
-{{- if .containerRoot.secretVolumes }}
-  {{- include "helm.toVolumeMount" .containerRoot.secretVolumes | nindent 2 }}
-{{- end }}
-{{- if .containerRoot.persistentVolumes }}
-  {{- include "helm.toVolumeMount" .containerRoot.persistentVolumes | nindent 2 }}
-{{- end }}
-{{- if .containerRoot.emptyDirVolumes }}
-  {{- include "helm.toVolumeMount" .containerRoot.emptyDirVolumes | nindent 2 }}
-{{- end }}
-{{- if .containerRoot.configMapVolumes }}
-  {{- include "helm.toVolumeMount" .containerRoot.configMapVolumes | nindent 2 }}
-{{- end }}
-{{- end }}
+{{- if .containerRoot.secretVolumes -}}
+  {{- include "helm.toVolumeMount" .containerRoot.secretVolumes | nindent 2 -}}
+{{- end -}}
+{{- if .containerRoot.persistentVolumes -}}
+  {{- include "helm.toVolumeMount" .containerRoot.persistentVolumes | nindent 2 -}}
+{{- end -}}
+{{- if .containerRoot.emptyDirVolumes -}}
+  {{- include "helm.toVolumeMount" .containerRoot.emptyDirVolumes | nindent 2 -}}
+{{- end -}}
+{{- if .containerRoot.configMapVolumes -}}
+  {{- include "helm.toVolumeMount" .containerRoot.configMapVolumes | nindent 2 -}}
+{{- end -}}
+{{- end -}}
 {{- end }}
 
 {{- define "ejlevin1.pod.volumeMounts" }}

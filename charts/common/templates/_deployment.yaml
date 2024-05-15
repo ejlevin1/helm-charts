@@ -1,86 +1,105 @@
-{{- define "ejlevin1.deployment" -}}
-{{ $root := $ }}
-{{- if (.Values.image).repository }}
-{{- if .Capabilities.APIVersions.Has "apps/v1" }}
-apiVersion: apps/v1
-{{- else }}
-apiVersion: apps/v1beta2
+{{- define "common.deployments" -}}
+  {{- $root := $ -}}
+  {{- if hasKey .Values "deployments" -}}
+    {{- range .Values.deployments -}}
+      {{- $name := required "deployment must have a .name" .name | trim }}
+      {{- print "# Deployment definition [" $name "] from .definitions" | nindent 0 -}}
+      {{- include "common.deployment" (dict "Root" $root "deploymentRoot" .) | trim | nindent 0 }}
+      {{- print "---" | nindent 0 }}
+    {{- end -}}
+  {{- end -}}
+  {{- if (.Values.image).repository -}}
+    {{- $deploymentRoot := .Values }}
+    {{- $deploymentRoot := set $deploymentRoot "name" (default $root.Chart.Name .Values.nameOverride) -}}
+    {{- print "# Deployment definition [" $deploymentRoot.name "] from root .Values" | nindent 0 -}}
+    {{- include "common.deployment" (dict "Root" $root "deploymentRoot" $deploymentRoot) | trim | nindent 0 }}
+  {{- end }}
 {{- end }}
+
+{{- define "common.deployment" -}}
+{{- $root := .Root -}}
+{{- $name := required "deployment must have a .name" .deploymentRoot.name | trim -}}
+{{- $values := .deploymentRoot -}}
+{{- $values := set $values "nameOverride" .deploymentRoot.name -}}
+{{- $values := (dict "Values" .deploymentRoot "nameOverride" .deploymentRoot.name) -}}
+{{- $fakeRoot := (dict "Chart" $root.Chart "Release" $root.Release "Values" $values) -}}
+{{- if (.deploymentRoot.image).repository -}}
+apiVersion: {{ $root.Capabilities.APIVersions.Has "apps/v1"  | ternary "apps/v1" "apps/v1beta2" }}
 kind: Deployment
 metadata:
-  name: {{ include "helm.name" . }}
-  labels: {{- include "helm.labels" . | nindent 4 }}
-  {{- if (.Values.deployment).annotations }}
+  name: {{ $name }}
+  labels: {{- include "helm.labels" $fakeRoot | nindent 4 }}
+  {{- with .deploymentRoot.annotations }}
   annotations:
-    {{- toYaml .Values.deployment.annotations | nindent 4 }}
+    {{- toYaml . | nindent 8 }}
   {{- end }}
 spec:
-  {{- if and .Values.replicaCount (not (.Values.autoscaling).enabled) }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if and .deploymentRoot.replicaCount (not (.deploymentRoot.autoscaling).enabled) }}
+  replicas: {{ .deploymentRoot.replicaCount }}
   {{- end }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 5 }}
-  {{- with .Values.deploymentStrategy }}
+  revisionHistoryLimit: {{ .deploymentRoot.revisionHistoryLimit | default 5 }}
+  {{- with .deploymentRoot.deploymentStrategy }}
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "helm.selectorLabels" . | nindent 6 }}
+      {{- include "helm.selectorLabels" $fakeRoot | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .deploymentRoot.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "helm.selectorLabels" . | nindent 8 }}
+        {{- include "helm.selectorLabels" $fakeRoot | nindent 8 }}
     spec:
-      {{- include "common.images.renderPullSecrets" ( dict "images" (list .Values.image) "context" $ ) | indent 6 }}
-      {{- if (.Values.image).imagePullSecrets }}
-      {{- with .Values.image.imagePullSecrets }}
+      {{- include "common.images.renderPullSecrets" ( dict "images" (list .deploymentRoot.image) "Root" $fakeRoot ) | indent 6 }}
+      {{- if (.deploymentRoot.image).imagePullSecrets }}
+      {{- with .deploymentRoot.image.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- end }}
-      {{- if (.Values.serviceAccount).name }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- if (.deploymentRoot.serviceAccount).name }}
+      serviceAccountName: {{ .deploymentRoot.serviceAccount.name }}
       {{- end }}
-      {{- if .Values.podSecurityContext }}
+      {{- if .deploymentRoot.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .deploymentRoot.podSecurityContext | nindent 8 }}
       {{- else }}
       securityContext: {}
       {{- end }}
       containers:
-          {{- (print "- name: " (include "helm.name" .)) | trim | nindent 8 -}}
-          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
-          {{- include "ejlevin1.containerLifecycle" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
-          {{- include "ejlevin1.containerProbes" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
-          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .Values "Root" $root ) | nindent 10 }}
-      {{- if (.Values.sidecar).enabled }}
-          {{- (print "- name: " (required "A sidecar container name is required." .Values.sidecar.name)) | trim | nindent 8 }}
-          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .Values.sidecar "Root" $root ) | nindent 10 }}
-          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .Values.sidecar "Root" $root ) | nindent 10 }}
+          {{- (print "- name: " $name) | nindent 8 -}}
+          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .deploymentRoot "Root" $root ) | trim | nindent 10 -}}
+          {{- include "ejlevin1.containerLifecycle" ( dict "containerRoot" .deploymentRoot "Root" $root ) | trim | nindent 10 -}}
+          {{- include "ejlevin1.containerProbes" ( dict "containerRoot" .deploymentRoot "Root" $root ) | trim | nindent 10 -}}
+          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .deploymentRoot "Root" $root ) | trim | nindent 10 -}}
+      {{- if (.deploymentRoot.sidecar).enabled }}
+          {{- (print "- name: " (required "A sidecar container name is required." .deploymentRoot.sidecar.name)) | trim | nindent 8 }}
+          {{- include "ejlevin1.containerBase" ( dict "containerRoot" .deploymentRoot.sidecar "Root" $root ) | trim | nindent 10 }}
+          {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" .deploymentRoot.sidecar "Root" $root ) | trim | nindent 10 }}
       {{- end }}
-      {{- if .Values.initContainers }}
+      {{- if .deploymentRoot.initContainers }}
       initContainers:
-        {{- range .Values.initContainers }}
+        {{- range .deploymentRoot.initContainers }}
             {{- (print "- name: " (required "An init container name is required." .name)) | trim | nindent 8 }}
-            {{- include "ejlevin1.containerBase" ( dict "containerRoot" . "Root" $root ) | nindent 10 }}
-            {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" . "Root" $root ) | nindent 10 }}
+            {{- include "ejlevin1.containerBase" ( dict "containerRoot" . "Root" $root ) | trim | nindent 10 }}
+            {{- include "ejlevin1.containerVolumeMounts" ( dict "containerRoot" . "Root" $root ) | trim | nindent 10 }}
         {{- end }}
       {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- with .deploymentRoot.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .deploymentRoot.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .deploymentRoot.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- include "ejlevin1.pod.volumeMounts" ( dict "containerRoot" .Values "Root" $root ) | indent 6 }}
+      {{- include "ejlevin1.pod.volumeMounts" ( dict "containerRoot" .deploymentRoot "Root" $root ) | indent 6 }}
 {{- end -}}
 {{- end -}}
