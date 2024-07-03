@@ -185,12 +185,12 @@ successThreshold: {{ .successThreshold }}
 {{- range . -}}
 - name: {{ required ".name is required to define a volume mount." .name | quote }}
   mountPath: {{ required ".mountPath is required to define a volume mount." .mountPath | quote }}
-  {{- if .subPath -}}
+  {{- if .subPath }}
   subPath: {{ .subPath | quote }}
-  {{- end -}}
-  {{- if .readOnly -}}
+  {{- end }}
+  {{- if .readOnly }}
   readOnly: {{ .readOnly | default true }}
-  {{- end -}}
+  {{- end }}
 {{- end -}}
 {{- end }}
 
