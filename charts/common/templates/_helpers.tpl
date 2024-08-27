@@ -210,9 +210,10 @@ ports:
     containerPort: {{ .containerPort }}
 {{- end }}
 {{- end }}
-{{- if .containerRoot.resources -}}
-resources: {{- toYaml .containerRoot.resources | nindent 2 -}}
-{{- end -}}
+{{- if .containerRoot.resources }}
+resources: 
+  {{- toYaml .containerRoot.resources | nindent 2 }}
+{{- end }}
 {{- include "common.containerEnv" . | trim | nindent 0 -}}
 {{- end -}}
 
