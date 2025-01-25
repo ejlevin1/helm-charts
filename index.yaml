@@ -1,5 +1,15 @@
 apiVersion: v1
 entries:
+  cloudflared:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2025-01-25T01:38:59.469460774Z"
+    description: A Helm chart for running behind cloudflare tunnel
+    digest: a554e44589c01064abc94fa459f62247e24288383cb5794eb00612481fc00ce0
+    name: cloudflared
+    urls:
+    - https://github.com/ejlevin1/helm-charts/releases/download/cloudflared-0.1.0/cloudflared-0.1.0.tgz
+    version: 0.1.0
   common:
   - apiVersion: v1
     appVersion: "1.0"
