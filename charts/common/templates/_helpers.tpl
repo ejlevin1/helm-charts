@@ -182,7 +182,7 @@ successThreshold: {{ .successThreshold }}
 {{- end }}
 
 {{- define "helm.toVolumeMount" }}
-{{- range . -}}
+{{- range . }}
 - name: {{ required ".name is required to define a volume mount." .name | quote }}
   mountPath: {{ required ".mountPath is required to define a volume mount." .mountPath | quote }}
   {{- if .subPath }}
@@ -302,7 +302,7 @@ volumeMounts:
   {{- include "helm.toVolumeMount" .containerRoot.emptyDirVolumes | nindent 2 -}}
 {{- end -}}
 {{- if .containerRoot.configMapVolumes -}}
-  {{- include "helm.toVolumeMount" .containerRoot.configMapVolumes | nindent 2 -}}
+  {{- include "helm.toVolumeMount" .containerRoot.configMapVolumes | nindent 2 }}
 {{- end -}}
 {{- end -}}
 {{- end }}
